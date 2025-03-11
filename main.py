@@ -10,7 +10,7 @@ random.seed(1000)
 if __name__ == "__main__":
     
    ## loading datasets
-   json_file = "data/i01.json"
+   json_file = "data/i07.json"
    occupants, patients, operating_theaters, rooms, nurses, surgeons, hospital = load_data_1(json_file)   # manca hospital
    D, num_skill_level, shift_types, age_groups, weights = load_data_2(json_file)
    
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
    ## finding solution with GRASP method
 
-   max_iteration = 5
+   max_iteration = 10
    print("ciao1")
 
    '''
@@ -42,14 +42,20 @@ if __name__ == "__main__":
    id_nurse_working = matrice 3xD (riche -> shift, colonne -> giorni)
    OSS: la inseriamo come INPUT in grasp_solver
    '''
-   id_nurse_working = np.empty((3, D), dtype = object)
-   
+   id_nurse_working = np.empty((3, D), dtype=object)
+
+   # Inizializza ogni cella con una lista vuota
+   for s in range(3):
+      for d in range(D):
+         id_nurse_working[s][d] = []
+
    for n, nurse in enumerate(nurses):
-      for s in range(0, 3):
-         for d in range(0, D):
-            if d == nurse.working_shifts["day"] and s == string_conversion(nurse.working_shifts["shift"]):
-               id_nurse_working[s][d].append(n)
- 
+      for s in range(3):
+         for d in range(D):
+               for shift_info in nurse.working_shifts:
+                  if shift_info['day'] == d and s == string_conversion(shift_info["shift"]):
+                     id_nurse_working[s][d].append(n)
+
    f_best, solution = grasp_solver(D, weights, occupants, patients, operating_theaters, rooms, nurses, surgeons, max_iteration, id_nurse_working)
                   
 
