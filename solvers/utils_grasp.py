@@ -487,7 +487,7 @@ def admit_mandatory_constr(Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, pa
       else:
          Adm_yes_or_no[p] = random.uniform(0, 1)
 
-   Adm_Date = [[] for _ in range(len(patients))]
+   #Adm_Date = [[] for _ in range(len(patients))]
    surgeons_availability = []
    for s, surgeon in enumerate(surgeons):
       surgeons_availability.append(surgeon.list_max_surgery_time)
@@ -509,8 +509,10 @@ def admit_mandatory_constr(Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, pa
          tot_day_availability = surgeons_availability[id_surgeonXp]
          day_available = np.nonzero(tot_day_availability)[0]
          # we take the intersection between day availability of the surgeon and interval time between surgery_release and surgery_due_day
+         print("vediamo se arrivi qui")
          Adm_Date[p] = random.choice(list(set(day_available).intersection(range(patient.surgery_release_day, patient.surgery_due_day + 1))))
-         
+         print(patient.surgery_release_day, patient.surgery_due_day )
+         print(Adm_Date[p])
          while flag_day == False and flag_OT == False:
             
             if (operating_theaters[otXpatient[p]].availability)[Adm_Date[p]] - list_timeXOT[otXpatient[p]][Adm_Date[p]] >= patient.surgery_duration:
