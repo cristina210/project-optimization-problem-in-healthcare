@@ -67,22 +67,7 @@ def construct_feasible_solution(x, occupants, patients, operating_theaters, room
    # Each inner list contains the indices of the patients and occupants who are at the hospital on that specific day. 
    # It is exploited the date of admission and the lenght of stay (for patients not admitted the list is empty)
    
-   list_day_patientAndoccupant = [[] for _ in range(D)]
 
-   # Since both occupants and patients start with index 0 in their respective structures,
-   # we rescale the occupant indices in this combined structure to differentiate them from patients:
-   occupant_start_index = len(patients) 
-   for p, patient in enumerate(patients):
-      if Adm_yes_or_no[p] == 1:  
-         start_stay = Adm_Date[p]
-         end_stay = min(D, start_stay + patient.length_of_stay)  
-         for t in range(start_stay, end_stay):
-              list_day_patientAndoccupant[t].append(p)
-   for o, occupant in enumerate(occupants):   # add occupants  
-      start_stay = 0
-      end_stay = min(D, start_stay + occupant.length_of_stay)  
-      for t in range(start_stay, end_stay):
-         list_day_patientAndoccupant[t].append(occupant_start_index + o)  # rescale index
 
    # Constraints:
 
@@ -121,7 +106,7 @@ def construct_feasible_solution(x, occupants, patients, operating_theaters, room
 
    # H1 and H7) limit of capacity of each room should not be overcome (H7) and in each room all people are the same gender (H1) 
    # H2) Each patient should not be assigned to incompatible rooms (H2)
-   new_roomXpatient = room_constr(rooms, patients, occupants, roomXpatient, Adm_yes_or_no, list_day_patientAndoccupant)
+   roomXpatient, list_day_patientAndoccupant, flag = room_constr(rooms, patients, occupants, roomXpatient, Adm_Date, Adm_yes_or_no, D)
 
 
    iter = 1 
@@ -138,8 +123,7 @@ def construct_feasible_solution(x, occupants, patients, operating_theaters, room
    else :
       flag = True
    """
-   flag = True
-   x_feasible = [Adm_yes_or_no, Adm_Date, new_roomXpatient, otXpatient, nurseXroom, OT_availability]
+   x_feasible = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability]
    return x_feasible, flag, list_day_patientAndoccupant
 
 def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, surgeons, D, operating_theaters, list_day_patientAndoccupant, weights):
@@ -164,7 +148,7 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
          if find == True:
 
             # Check if it improves the solutions
-            value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
+            value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights, list_day_patientAndoccupant)
 
             if value2 < f_best_sofar:  # minore così quando perturbiamo non torniamo alla stessa soluzione
                return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability], find, value2
@@ -183,7 +167,7 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
          if find == True:
 
             # Check if it improves the solutions
-            value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
+            value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights, list_day_patientAndoccupant)
 
             if value2 < f_best_sofar:  # minore così quando perturbiamo non torniamo alla stessa soluzione
                return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability], find, value2
@@ -203,7 +187,7 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
 
             # Check if it improves the solutions
             x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability]
-            value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
+            value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights, list_day_patientAndoccupant)
 
             if value2 < f_best_sofar:  # minore così quando perturbiamo non torniamo alla stessa soluzione
                return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability], find, value2
@@ -222,7 +206,7 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
 
             # Check if it improves the solutions
             x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability]
-            value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
+            value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights, list_day_patientAndoccupant)
 
             if value2 < f_best_sofar:  # minore così quando perturbiamo non torniamo alla stessa soluzione
                return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability], find, value2
@@ -242,7 +226,7 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
 
                   # Check if it improves the solutions
                   x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability]
-                  value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
+                  value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights,list_day_patientAndoccupant)
                   
                   if value2 < f_best_sofar:   # minore così quando perturbiamo non torniamo alla stessa soluzione
                      improve = True
@@ -282,7 +266,7 @@ def check_constraint(x, occupants, patients, rooms, nurses, surgeons, D, operati
    return all([bool_1_7_constraint, bool_3_4_constraint, bool_6_constraint, bool_5_constraint, bool_2_constraint])
 
 
-def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights):
+def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights, list_day_patientAndoccupant):
    Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability = x
    
    # useful structure that will be exploited 
@@ -467,10 +451,8 @@ def admit_mandatory_constr(Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, pa
          tot_day_availability = surgeons_availability[id_surgeonXp]
          day_available = np.nonzero(tot_day_availability)[0]
          # we take the intersection between day availability of the surgeon and interval time between surgery_release and surgery_due_day
-         print("vediamo se arrivi qui")
          Adm_Date[p] = random.choice(list(set(day_available).intersection(range(patient.surgery_release_day, patient.surgery_due_day + 1))))
-         print(patient.surgery_release_day, patient.surgery_due_day )
-         print(Adm_Date[p])
+         
          while flag_day == False and flag_OT == False:
             
             if (operating_theaters[otXpatient[p]].availability)[Adm_Date[p]] - list_timeXOT[otXpatient[p]][Adm_Date[p]] >= patient.surgery_duration:
@@ -488,7 +470,7 @@ def admit_mandatory_constr(Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, pa
             if surgeons_availability[id_surgeonXp][Adm_Date[p]] - list_timeXsurgeon[id_surgeonXp][Adm_Date[p]] > patient.surgery_duration and flag_OT == True:
                list_timeXsurgeon[id_surgeonXp][Adm_Date[p]] += patient.surgery_duration
                flag_day = True
-            elif flag_OT == False:   
+            elif flag_OT == False:  
                Adm_Date[p] = random.choice(list(set(day_available).intersection(range(patient.surgery_release_day, patient.surgery_due_day + 1))))
                
    
@@ -523,10 +505,27 @@ def admit_mandatory_constr(Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, pa
                flag_day = True
             elif flag_OT == False:   
                Adm_Date[p] = random.choice(list(set(day_available).intersection(range(patient.surgery_release_day, D))))
+               
 
       else:
          Adm_Date[p] = -1
 
+   # effettuo l aggiornamento di list_day_patientAndoccupant
+   # Since both occupants and patients start with index 0 in their respective structures,
+   # we rescale the occupant indices in this combined structure to differentiate them from patients:
+   '''occupant_start_index = len(patients) 
+   for p, patient in enumerate(patients):
+      if Adm_yes_or_no[p] == 1:  
+         start_stay = Adm_Date[p]
+         end_stay = min(D, start_stay + patient.length_of_stay)  
+         for t in range(start_stay, end_stay):
+              list_day_patientAndoccupant[t].append(p)
+   for o, occupant in enumerate(occupants):   # add occupants  
+      start_stay = 0
+      end_stay = min(D, start_stay + occupant.length_of_stay)  
+      for t in range(start_stay, end_stay):
+         list_day_patientAndoccupant[t].append(occupant_start_index + o)  # rescale index
+         '''
 
 
    # DA FARE LUNEDì: ci sono 2 casi:
@@ -600,8 +599,10 @@ def maxTime_constr(surgeons, patients, operating_theaters, Adm_Date, otXpatient,
 CONTROLLARE: abbiamo reso room_constr costruttiva, modificando le assegnazioni dei pazienti alle stanze qualora 
 NON soddisfacessero i vincoli delle stanze (la versione booleana è SOTTO)
 '''
-def room_constr(rooms, patients, occupants, roomXpatient, Adm_Date, list_day_patientAndoccupant):
-   new_roomXpatient = roomXpatient.copy()
+
+
+
+def room_constr(rooms, patients, occupants, roomXpatient, Adm_Date, Adm_yes_or_no, D):
 
    # per modifiche sul vincolo di GENERE: consideriamo gli occupanti (che sono attribuiti a una stanza ciascuno)
    # estraiamo per ogni stanza il genere del primo occupante (sono per forza TUTTI uguali perchè il vincolo di genere è FORTE)
@@ -628,8 +629,8 @@ def room_constr(rooms, patients, occupants, roomXpatient, Adm_Date, list_day_pat
    # e da lì in avanti far ripartire il genere (caso molto particolare, quindi lo escludiamo), per questo NON consideriamo list_of_set_gender
    # MA creiamo genderXroom
    
-   for id_room in missing_rooms:
-      id_patients = [i for i, x in enumerate(roomXpatient) if x == id_room]
+   for i, id_room in enumerate(missing_rooms):
+      id_patients = [i for i, x in enumerate(roomXpatient) if x == id_room] # Trova gli indici dei pazienti che sono assegnati a id_room nella lista roomXpatient
 
       if not id_patients: # if there are no patients in the room, skip it
         continue
@@ -644,9 +645,25 @@ def room_constr(rooms, patients, occupants, roomXpatient, Adm_Date, list_day_pat
          gender_B.append(id_room)
 
    
-      
+   list_day_patientAndoccupant = [[] for _ in range(D)]
 
-   for t, list_people in enumerate(list_day_patientAndoccupant):
+   # Since both occupants and patients start with index 0 in their respective structures,
+   # we rescale the occupant indices in this combined structure to differentiate them from patients:
+   occupant_start_index = len(patients) 
+   for p, patient in enumerate(patients):
+      if Adm_yes_or_no[p] == 1:  
+         start_stay = Adm_Date[p]
+         end_stay = min(D, start_stay + patient.length_of_stay)  
+         for t in range(start_stay, end_stay):
+              list_day_patientAndoccupant[t].append(p)
+   for o, occupant in enumerate(occupants):   # add occupants  
+      start_stay = 0
+      end_stay = min(D, start_stay + occupant.length_of_stay)  
+      for t in range(start_stay, end_stay):
+         list_day_patientAndoccupant[t].append(occupant_start_index + o)  # rescale index
+
+   flag = True
+   for t, list_people in enumerate(list_day_patientAndoccupant): # cicliamo per ogni giorno sulla lista di tutti quelli che abbiamo ammesso in quel giorno
       #list_of_set_gender = [set() for _ in range(len(rooms))]
       num_of_people = np.zeros(len(rooms))
 
@@ -663,28 +680,39 @@ def room_constr(rooms, patients, occupants, roomXpatient, Adm_Date, list_day_pat
             print("i:", i)'''
       
       for r, room in enumerate(rooms):
-         while num_of_people[r] > room.capacity:  # if it overcomes maximum capacity => find a new room
+         compatible_rooms = list(set(list(range(len(rooms))))-set(patient.incompatible_room_ids))
+         valid_rooms_A = [rr for rr in compatible_rooms if rr in gender_A and num_of_people[rr] < rooms[rr].capacity]
+         valid_rooms_B = [rr for rr in compatible_rooms if rr in gender_B and num_of_people[rr] < rooms[rr].capacity]
+
+         for p, patient in enumerate(patients):
+            gender_room_for_pat = genderXroom[roomXpatient[p]]
+            if gender_room_for_pat != patient.gender and patient.gender == "A" and valid_rooms_A:
+               new_r = random.choice(valid_rooms_A)
+            elif gender_room_for_pat != patient.gender and patient.gender == "B" and valid_rooms_B:
+               new_r = random.choice(valid_rooms_B)
+
+
+         while num_of_people[r] > room.capacity :  # if it overcomes maximum capacity => find a new room
             for p, patient in enumerate(patients):
                   compatible_rooms = list(set(list(range(len(rooms))))-set(patient.incompatible_room_ids))
-                  if patient.room_id == r or patient.gender != genderXroom[r]:
-                     valid_rooms_A = [rr for rr in compatible_rooms if rr not in gender_A and num_of_people[rr] < rooms[rr].capacity]
-                     valid_rooms_B = [rr for rr in compatible_rooms if rr not in gender_B and num_of_people[rr] < rooms[rr].capacity]
+                  if roomXpatient[p] == r or patient.gender != genderXroom[r]:
+                     valid_rooms_A = [rr for rr in compatible_rooms if rr in gender_A and num_of_people[rr] < rooms[rr].capacity]
+                     valid_rooms_B = [rr for rr in compatible_rooms if rr in gender_B and num_of_people[rr] < rooms[rr].capacity]
 
                      if patient.gender == "A" and valid_rooms_A:
-                        new_r = random.choice(list(compatible_rooms - set(gender_A)))
+                        new_r = random.choice(valid_rooms_A)
                      elif patient.gender == "B" and valid_rooms_B:
-                        new_r = random.choice(list(compatible_rooms - set(gender_B)))
+                        new_r = random.choice(valid_rooms_B)
                      else:
                         Warning('No compatible rooms.')
-                        continue
-                     
-                     new_roomXpatient[patient.id] = new_r
+                        flag = False
+                        return [],[],flag
+                     roomXpatient[patient.id] = new_r
                      num_of_people[r] -= 1
-                     num_of_people[new_r] += 1
-                  
+                     num_of_people[new_r] += 1            
                      break
 
-   return new_roomXpatient
+   return roomXpatient, list_day_patientAndoccupant, flag
 
 ####################### vedere se può servire in futuro
 '''
