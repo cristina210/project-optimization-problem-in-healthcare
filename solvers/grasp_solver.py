@@ -22,7 +22,7 @@ def grasp_solver(D, weights, occupants, patients, operating_theaters, rooms, nur
          print(flag5)
       # initialize f_best_sofar 
       if iter == 1:
-         f_best_sofar = evaluate_obj_func(x_feasible, occupants, patients, rooms, nurses, surgeons, D, weights)
+         f_best_sofar = evaluate_obj_func(x_feasible, occupants, patients, rooms, nurses, surgeons, D, weights, list_day_patientAndoccupant)
          print(f_best_sofar)
          x_best_sofar = x_feasible
       improvements_yes_or_no = True
