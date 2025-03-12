@@ -165,8 +165,14 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
 
             # Check if it improves the solutions
             value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
+            print("a")
 
-            if value2 < f_best_sofar:  # minore così quando perturbiamo non torniamo alla stessa soluzione
+            if value2 < f_best_sofar-1:  # minore così quando perturbiamo non torniamo alla stessa soluzione
+               print("f_best_sofar")
+               print(f_best_sofar)
+               print("f find now")
+               print(value2)
+               print("b")
                return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability], find, value2
 
          # Check if it enhance objective function
@@ -184,8 +190,14 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
 
             # Check if it improves the solutions
             value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
+            print("c")
 
-            if value2 < f_best_sofar:  # minore così quando perturbiamo non torniamo alla stessa soluzione
+            if value2 < f_best_sofar-1:  # minore così quando perturbiamo non torniamo alla stessa soluzione
+               print("f_best_sofar")
+               print(f_best_sofar)
+               print("f find now")
+               print(value2)
+               print("d")
                return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability], find, value2
       
       # Second perturbation
@@ -204,8 +216,15 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
             # Check if it improves the solutions
             x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability]
             value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
+            print("e")
 
-            if value2 < f_best_sofar:  # minore così quando perturbiamo non torniamo alla stessa soluzione
+            if value2 < f_best_sofar -1:  # minore così quando perturbiamo non torniamo alla stessa soluzione
+               print("f_best_sofar")
+               print(f_best_sofar)
+               print("f find now")
+               print(value2)
+               print("f")
+               
                return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability], find, value2
          
 
@@ -219,12 +238,17 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
          find = check_constraint(x, occupants, patients, rooms, nurses, surgeons, D, operating_theaters, list_day_patientAndoccupant)
 
          if find == True:
-
+            print("g")
             # Check if it improves the solutions
             x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability]
             value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
 
-            if value2 < f_best_sofar:  # minore così quando perturbiamo non torniamo alla stessa soluzione
+            if value2 < f_best_sofar -1 :  # minore così quando perturbiamo non torniamo alla stessa soluzione
+               print("f_best_sofar")
+               print(f_best_sofar)
+               print("f find now")
+               print(value2)
+               print("h")
                return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability], find, value2
 
 
@@ -244,12 +268,18 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
                   x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability]
                   value2 = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
                   
-                  if value2 < f_best_sofar:   # minore così quando perturbiamo non torniamo alla stessa soluzione
+                  if value2 < f_best_sofar - 1:   # minore così quando perturbiamo non torniamo alla stessa soluzione
                      improve = True
+                     print("i")
                   
                   if find == True and improve == True:
+                     print("f_best_sofar")
+                     print(f_best_sofar)
+                     print("f find now")
+                     print(value2)
+                     print("j")
                      return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom], find, value2
-      
+      print("out")
       return [], False, 0
                               
 
@@ -278,6 +308,18 @@ def check_constraint(x, occupants, patients, rooms, nurses, surgeons, D, operati
 
    # Constraint H2  ✅ 
    bool_2_constraint = bool_incompatible_room_constr(patients, roomXpatient)
+
+   constraint_vector = [
+   int(bool_1_7_constraint),   # ok
+   int(bool_2_constraint),  # mai soddisfatto 
+   int(bool_3_4_constraint),  # mai soddisfatto
+   int(bool_5_constraint),   # ok
+   int(bool_6_constraint)    # mai soddisfatto
+   ]
+
+   #print("Vettore dei constraint soddisfatti:", constraint_vector)
+
+   #if bool_1_7_constraint == True and bool_2_constraint==True and bool_3_4_constraint==True and bool_5_constraint == True and bool_6_constraint == True:
 
    return all([bool_1_7_constraint, bool_3_4_constraint, bool_6_constraint, bool_5_constraint, bool_2_constraint])
 
@@ -502,7 +544,7 @@ def admit_mandatory_constr(Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, pa
          tot_day_availability = surgeons_availability[id_surgeonXp]
          day_available = np.nonzero(tot_day_availability)[0]
          # we take the intersection between day availability of the surgeon and interval time between surgery_release and surgery_due_day
-         Adm_Date[p] = random.choice(list(set(day_available).intersection(range(patient.surgery_release_day, patient.surgery_due_day + 1))))
+         Adm_Date[p] = random.choice(list(set(day_available).intersection(range(patient.surgery_release_day, D))))
          
          while flag_day == False and flag_OT == False:
             if (operating_theaters[otXpatient[p]].availability)[Adm_Date[p]] - list_timeXOT[otXpatient[p]][Adm_Date[p]] > patient.surgery_duration:
@@ -520,7 +562,7 @@ def admit_mandatory_constr(Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, pa
                list_timeXsurgeon[id_surgeonXp][Adm_Date[p]] += patient.surgery_duration
                flag_day = True
             elif flag_OT == False:   
-               Adm_Date[p] = random.choice(list(set(day_available).intersection(range(patient.surgery_release_day, patient.surgery_due_day + 1))))
+               Adm_Date[p] = random.choice(list(set(day_available).intersection(range(patient.surgery_release_day, D))))
 
       else:
          Adm_Date[p] = -1
@@ -726,7 +768,6 @@ def bool_period_of_admission_constr(Adm_yes_or_no, Adm_Date, patients):
    return True
 
 
-
 def bool_admit_mandatory_constr(Adm_yes_or_no, patients):
    for p, current_patient in enumerate(patients):  
     if current_patient.mandatory and Adm_yes_or_no[p] == 0 :   
@@ -736,7 +777,7 @@ def bool_admit_mandatory_constr(Adm_yes_or_no, patients):
 
 def bool_incompatible_room_constr(patients, roomXpatient):
    for p, patient in enumerate(patients):
-      if roomXpatient[p] in patient.incompatible_room_ids:
+      if roomXpatient[p] in patient.incompatible_room_ids:  
          return False
    return True
 
@@ -757,26 +798,26 @@ ATTENZIONE: usare in verifyingconstr!!!!!
 def maxTime_constr_bool(surgeons, patients, operating_theaters, Adm_Date, otXpatient, D):
    for t in range(0,D):
       list_timeXsurgeon = np.zeros(len(surgeons))
-      list_timeXOT = np.zeros((D, len(operating_theaters)))
-      # extract only patient admitted in t 
-      patient_in_t = [i for i in range(len(Adm_Date)) if Adm_Date[i] == t]
+      list_timeXOT = np.zeros(len(operating_theaters))
+      # extract only patient admitted in t  
+      patient_in_t = [i for i in range(len(patients)) if Adm_Date[i] == t]
       info_patient_in_t = [patients[i] for i in patient_in_t]
       for p, pat in enumerate(info_patient_in_t):
          list_timeXsurgeon[pat.surgeon_id] = list_timeXsurgeon[pat.surgeon_id] + pat.surgery_duration
          #list_timeXOT[t, otXpatient[p]] += pat.surgery_duration
-         
-         if 0 <= otXpatient[p] < len(operating_theaters):
-            list_timeXOT[t, otXpatient[p]] += pat.surgery_duration
+         if 0 <= otXpatient[pat.id] < len(operating_theaters):  # vedere se toglierlo
+            list_timeXOT[otXpatient[pat.id]] += pat.surgery_duration
          else:
-            print(f"Errore: otXpatient[{p}] = {otXpatient[p]} fuori dai limiti!")
+            print(f"Errore: otXpatient[{pat.id}] = {otXpatient[pat.id]} fuori dai limiti!")
       # for each surgeon total time should not exceed the surgeon's max time
-      for s, time_req in enumerate(list_timeXsurgeon):
-         if time_req > surgeons[s].list_max_surgery_time[t]:
+      
+      for s, surgeon in enumerate(surgeons):
+         if list_timeXsurgeon[s] > surgeon.list_max_surgery_time[t]:
             return False
-      for s, time_req in enumerate(list_timeXOT):
-         for ot, OT_theater in enumerate(operating_theaters):
-            if time_req[ot] > OT_theater.availability[s]:
-               return False
+         
+      for ot, OT_theater in enumerate(operating_theaters):
+         if list_timeXOT[ot] > OT_theater.availability[t]:
+            return False
    return True
 
 

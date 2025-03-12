@@ -12,6 +12,14 @@ def grasp_solver(D, weights, occupants, patients, operating_theaters, rooms, nur
          # x_feasible rapresent the starting point for local search. It is a feasible solution:
          [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom, OT_availability] = x
          x_feasible, flag_point_found, list_day_patientAndoccupant = construct_feasible_solution(x, occupants, patients, operating_theaters, rooms, nurses, surgeons, D, id_nurse_working)
+         [Adm_yes_or_no, Adm_Date, new_roomXpatient, otXpatient, nurseXroom, OT_availability] = x_feasible  # aggiunto
+         flag2 = bool_incompatible_room_constr(patients, roomXpatient)
+         flag3 = maxTime_constr_bool(surgeons, patients, operating_theaters, Adm_Date, otXpatient, D)
+         flag5 = bool_admit_mandatory_constr(Adm_yes_or_no, patients) # aggiunto
+         print("importante:")
+         print(flag2)
+         print(flag3)
+         print(flag5)
       # initialize f_best_sofar 
       if iter == 1:
          f_best_sofar = evaluate_obj_func(x_feasible, occupants, patients, rooms, nurses, surgeons, D, weights)
@@ -23,6 +31,7 @@ def grasp_solver(D, weights, occupants, patients, operating_theaters, rooms, nur
       while improvements_yes_or_no :
          x_best_neighbour, improvements_yes_or_no, f_new = LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, surgeons, D, operating_theaters, list_day_patientAndoccupant, weights)  
          if improvements_yes_or_no:
+            print(iter)
             print("improve")
             f_best_sofar = f_new
             print(f_new)
