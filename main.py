@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
    ## finding solution with GRASP method
 
-   max_iteration = 10
+   max_iteration = 3
    print("ciao1")
 
    '''
