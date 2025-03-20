@@ -2,7 +2,8 @@ from Instances.utils_instances import string_conversion
 from Instances.utils_instances import extract_number
 
 class Patient:
-    def __init__(self, id, mandatory, gender, age_group, length_of_stay, surgery_release_day, surgery_due_day, surgery_duration, surgeon_id, incompatible_room_ids, workload_produced, skill_level_required):
+    def __init__(self, id_orig, id, mandatory, gender, age_group, length_of_stay, surgery_release_day, surgery_due_day, surgery_duration, surgeon_id, incompatible_room_ids, workload_produced, skill_level_required):
+        self.id_orig = id_orig
         self.id = extract_number(id)
         self.mandatory = mandatory
         self.gender = gender

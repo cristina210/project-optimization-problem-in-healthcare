@@ -33,6 +33,7 @@ def load_data_1(json_file):
               surgery_due_day_current = None
               
          current_patient = Patient(
+                id_orig=diz_attribute['id'],
                 id=diz_attribute['id'],
                 mandatory = mandatory_or_not,
                 gender = diz_attribute['gender'],   # string A or B
@@ -81,7 +82,8 @@ def load_data_1(json_file):
     # fill list of nurses
     for diz_attribute in data['nurses']:
         current_nurse = Nurse(
-        id=diz_attribute['id'],
+        id_orig = diz_attribute['id'],
+        id = diz_attribute['id'],
         skill_level=diz_attribute['skill_level'],
         working_shifts=diz_attribute['working_shifts']   # list of diz (keys = day, shift, maxload)
         )
