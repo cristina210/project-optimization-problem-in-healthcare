@@ -1,0 +1,8 @@
+Rossana Ciarfaglia@Rossana UCRT64 ~
+$ cd /c/Users/Rossana\ Ciarfaglia/Desktop/progetto_fadda/results
+
+Rossana Ciarfaglia@Rossana UCRT64 /c/Users/Rossana Ciarfaglia/Desktop/progetto_fadda/results
+$ g++ -o IHTP_Validator IHTP_Validator.cc
+
+Rossana Ciarfaglia@Rossana UCRT64 /c/Users/Rossana Ciarfaglia/Desktop/progetto_fadda/results
+$ ./IHTP_Validator i04.json output_file.json

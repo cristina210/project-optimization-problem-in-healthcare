@@ -56,14 +56,19 @@ def grasp_solver(D, weights, occupants, patients, operating_theaters, rooms, nur
          print("vicino del vicino: ")
          start_time_loc_search = time.time()
          x_best_neighbour, improvements_yes_or_no, f_new = LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, surgeons, D, operating_theaters, weights) 
+         # PROBLEMA x_best_neigh e f_new non sono coerenti
          end_time_loc_search = time.time()
          time_local_search.append(end_time_loc_search-start_time_loc_search)
          if improvements_yes_or_no:
             print("Improve")
             f_best_sofar = f_new
+            print("VEDI QUI")
+            print(f_new)
             print("f = ")
             print(f_new)
             x_best_sofar = x_best_neighbour
+            print("E QUI")
+            evaluate_obj_func2(x_best_neighbour, occupants, patients, rooms, nurses, surgeons, D, weights)
             x_feasible = x_best_neighbour
       iter = iter + 1
    if flag_point_found2 == False:

@@ -74,6 +74,7 @@ def load_data_1(json_file):
     # fill list of rooms
     for diz_attribute in data['rooms']:
         current_room = Room(
+            id_orig=diz_attribute['id'],
             id=diz_attribute['id'],
             capacity=diz_attribute['capacity']
         )
