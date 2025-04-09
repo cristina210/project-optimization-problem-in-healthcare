@@ -1,5 +1,7 @@
 import json
 import os
+import matplotlib.pyplot as plt
+
 def change_shift(number):
     if number == 0:
         return "early"
@@ -81,3 +83,17 @@ def generate_json(solution, patients, nurses, rooms, operating_theaters):
         json.dump(data, json_file, indent=4)
 
     print("File 'hospital_schedule.json' creato con successo!")
+
+def plot_f_obj(f_history):
+    # Plot
+   x = list(range(len(f_history)))              
+   y = [row[0] for row in f_history]             
+   colori = ['orange' if row[1] == 1 else 'blue' for row in f_history]
+   plt.figure(figsize=(10, 5))
+   plt.plot(x, y, color='black', linewidth=1, linestyle='-') 
+   plt.scatter(x, y, c=colori, s=60, edgecolors='k')           
+   plt.xlabel('Iter')
+   plt.ylabel('Value of objective function')
+   plt.title('Objective function')
+   plt.grid(True)
+   plt.show()
