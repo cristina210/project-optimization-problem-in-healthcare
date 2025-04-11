@@ -16,37 +16,41 @@ def construct_feasible_solution(occupants, patients, operating_theaters, rooms, 
    bool127 = False
 
    while iter < max_iter and not flag_stop:
+      
+      ##✅  Initializing decision variables
+      
       # Choice for admission
       # data structure: binary vector 
       Adm_yes_or_no = np.random.randint(0,1, size=(len(patients),)) 
 
-      # Date of admission for each patient from 0 to D ( X_t = D means that the patient is not admit, this is possible if the patient is not mandatory) 
-      # data structure: vector of integer
+      # Date of admission for each patient 
+      # data structure: vector of integer from 0 to D-1
       Adm_Date = np.random.randint(0,D-1, size=(len(patients),))     
       
-      # Room id (col) for each patient (rows). It will be use the convention that if an element is -1  it means that the patient is not admit.
+      # Room id for each patient
       # data structure: vector of integer
       roomXpatient = np.random.randint(0, len(rooms)-1, size=(len(patients),))  
 
-      # OT id (col) for each patient (rows). It will be use the convention that if an element is -1 it means that the patient is not admit.
+      # OT id for each patient 
       # data structure: vector of integer
 
       otXpatient = np.random.randint(0, len(operating_theaters)-1, size=(len(patients),))
 
-      # Nurse for each room (first dim) in each day (second dim) for each shift (third dim)
+      # Nurse id for each room (first dim) in each day (second dim) in each shift (third dim)
       # data structure: tridimensional matrix of integer
       nurseXroom = np.random.randint(0, len(nurses)-1, size=(len(rooms), D, 3))
 
-      # Constraints:
+      ##🚑 Constraints:
 
       # 0) Each patient has only one room for all the stay: ensured by data structure
       # 0) Each room has only one nurse for each day and each shift: ensured by data structure
 
-      # H5, H6 and H3 and H4) Force to admit every mandatory patient and be coherent with other structure (H5)
-      # convention: if patient i is not admitted than otXpatient[i] = roomXpatient[i] = Adm_Date[i] = -1.
-      # Each mandatory patient should be admitted between release day and due day 
-      # and each non mandatory patient should be admitted after release day (H6)
-      # Each surgeon should not work more than maximum surgery time (H3) and there is a maximum time for each OT (H4) 
+      #🚑 Constraints: H5, H6, H3 and H4
+      # Convention: if patient i is not admitted than otXpatient[i] = roomXpatient[i] = Adm_Date[i] = -1.
+      # H5 --> Each mandatory patient should be admitted between release day and due day 
+      # H6 --> Each non mandatory patient should be admitted after release day 
+      # H3 --> Each surgeon should not work more than maximum surgery time 
+      # H4 --> Each OT has a maximum time 
 
       Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, bool5634 = admit_constr(Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, patients, D, surgeons, operating_theaters, len(rooms), dont_admit_nonMand)     
       
@@ -55,8 +59,10 @@ def construct_feasible_solution(occupants, patients, operating_theaters, rooms, 
          flag_stop = False
          continue
  
-      # H1, H2 and H7) limit of capacity of each room should not be overcome (H7) and in each room all people are the same gender (H1) 
-      # Each patient should not be assigned to incompatible rooms (H2)
+      #🚑 H1, H2 and H7) 
+      # H7 --> Limit of capacity of each room should not be overcome 
+      # H1 --> In each room all people have the same gender
+      # H2 --> Each patient should not be assigned to incompatible rooms 
 
       roomXpatient, bool127 = room_constr(rooms, patients, occupants, roomXpatient, Adm_Date, Adm_yes_or_no, D)
 
@@ -69,21 +75,10 @@ def construct_feasible_solution(occupants, patients, operating_theaters, rooms, 
    print(iter)
 
    x_feasible = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
-   if not bool127:
-      Warning("Problem in building a feasible solution due to room's constraints")
-   if not bool5634:
-      Warning("Problem in building a feasible solution due to date of admission or OTs, surgeons' constraints")
+
    return x_feasible, flag_stop
 
 def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, surgeons, D, operating_theaters, weights):
-   
-   # Choice: mix between first Improvement and best neighbour
-   # (first improvements for perturbation of date of admission and room assigned, best improvements for nurse assignement)
-
-   # PROBLEMA SE I PAZIENTI SONO TANTI E LENTISSIMO 
-   # Possibili sol: prenderne solo un numero fissato limitato e li prendo casualmente?
-   # per ora ho messo "int(math.sqrt(len(patient_id_shuffle)/2))" per prenderne solo una parte (già shufflelata)
-   # radice quadrata così da smorzare ad alte dimensioni 
 
    Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom = x_feasible
 
@@ -95,15 +90,14 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
          if Adm_yes_or_no[p] == 1:
             list_accepted_p.append(p)
 
-
+   # type of perturbation
    perturbations = ["admission_forward", "admission_backward", "room_change", "nurse_swap"]
    random.shuffle(perturbations) 
 
    for perturbation in perturbations:
-      ##########################################################################################
+      # 🔁 Shifting admission date forward
       if perturbation == "admission_forward":
-
-         # First perturbation: date of admission 
+ 
          Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom = x_feasible
 
          patient_id_shuffle = list_accepted_p
@@ -116,30 +110,26 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
             Adm_Date[p] = Adm_Date[p] + Adm_Date_change
 
             x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
-            find = check_constraint(x, occupants, patients, rooms, nurses, surgeons, D, operating_theaters) # check if feasible
+            find = check_constraint(x, occupants, patients, rooms, nurses, surgeons, D, operating_theaters) 
 
             if find == True:
-               # Swap nurses (between rooms) if they work in the same day and same shift (it verify constraints)
-               max_inner_iter = 30   # potrebbe dipendere dal numero di stanze (tipo = numero di permutazioni)
+               max_inner_iter = 30   
                iter_inner = 1
                f_best = f_best_sofar
                x_best = x_feasible
                flag_improve = False
-
-               # CHANGE: visto che la assegnazione stanza nurse è senza vincolo, gratis possiamo velocizzare la ricerca locale assegnando già qui dentro il terzo tipo di pert
-               # Prima senza era troppo lento e non si muoveva, non si spostava di tanto
+               
+               # Best improvement choice for nurses shift variable
                while iter_inner < max_inner_iter:
                   iter_inner = iter_inner + 1
                   for t in range(0,D):
                      for s in range(0,3):
                         np.random.shuffle(nurseXroom[:, t, s])
                         x = copy.deepcopy([Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom])
-                        #x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
                         value_try = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
                         if value_try < f_best - 1:
                            f_best = value_try
                            x_best = copy.deepcopy([Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom])
-                           #x_best = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
                            flag_improve = True
                if flag_improve == True:
                   return x_best, True, f_best
@@ -148,6 +138,7 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
             else:
                Adm_Date[p] = Adm_Date[p] - Adm_Date_change  # restore the perturbation 
 
+      # 🔁 Admission perturbation: shifting admission date backward
       elif perturbation == "admission_backward":
 
          Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom = x_feasible
@@ -160,40 +151,39 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
             Adm_Date_change = random.choices([1, 2], weights=[0.5, 0.5], k=1)[0]
             Adm_Date[p] = Adm_Date[p] - Adm_Date_change
 
-            # Check if it's feasible
             x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
             find = check_constraint(x, occupants, patients, rooms, nurses, surgeons, D, operating_theaters)
 
             if find == True:
 
-               # Swap nurses (between rooms) if they work in the same day and same shift (it verify constraints)
-               max_inner_iter = 30   # potrebbe dipendere dal numero di stanze (tipo = numero di permutazioni)
+               max_inner_iter = 30   
                iter_inner = 1
                f_best = f_best_sofar
                x_best = x_feasible
                flag_improve = False
+               
+               # Best improvement choice for nurses shift variable
                while iter_inner < max_inner_iter:
                   iter_inner = iter_inner + 1
                   for t in range(0,D):
                      for s in range(0,3):
                         np.random.shuffle(nurseXroom[:, t, s])
                         x = copy.deepcopy([Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom])
-                        #x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
                         value_try = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
                         if value_try < f_best - 1:
                            f_best = value_try
                            x_best = copy.deepcopy([Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom])
-                           #x_best = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
                            flag_improve = True
                if flag_improve == True:
                   return x_best, True, f_best
                else:
-                  Adm_Date[p] = Adm_Date[p] + Adm_Date_change
+                  Adm_Date[p] = Adm_Date[p] + Adm_Date_change   # restore the perturbation
             else:
                Adm_Date[p] = Adm_Date[p] + Adm_Date_change  # restore the perturbation
 
+      # 🔁 Room perturbation: random choice
       elif perturbation == "room_change":
-         # Second perturbation: 
+
          Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom = x_feasible
 
          patient_id_shuffle = list_accepted_p
@@ -205,31 +195,27 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
             room_old = roomXpatient[p]
             roomXpatient[p] = random.choice(list(set(range(len(rooms))) - set(patients[p].incompatible_room_ids)))
 
-            # Check if it's feasible
-            #x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
             x = copy.deepcopy([Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom])
             find = check_constraint(x, occupants, patients, rooms, nurses, surgeons, D, operating_theaters)
 
             if find == True:
-
-               # Swap nurses (between rooms) if they work in the same day and same shift (it verify constraints)
-               max_inner_iter = 30    # potrebbe dipendere dal numero di stanze (tipo = numero di permutazioni)
+               max_inner_iter = 30   
                iter_inner = 1
                f_best = f_best_sofar
                x_best = x_feasible
                flag_improve = False
+               
+               # Best improvement choice for nurses shift variable
                while iter_inner < max_inner_iter:
                   iter_inner = iter_inner + 1
                   for t in range(0,D):
                      for s in range(0,3):
                         np.random.shuffle(nurseXroom[:, t, s])
                         x = copy.deepcopy([Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom])
-                        #x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
                         value_try = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
                         if value_try < f_best - 1:
                            f_best = value_try
                            x_best = copy.deepcopy([Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom])
-                           #x_best = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
                            flag_improve = True
                if flag_improve == True:
                   return x_best, True, f_best
@@ -238,28 +224,27 @@ def LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, su
             else:
                roomXpatient[p] = room_old  # restore the perturbation
 
+      # Nurse perturbation: shuffle rooms assigned to nurses that work in the same shift
       elif perturbation == "nurse_swap":
 
-         # Third perturbation: swap nurse that work in the same shift
          Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom = x_feasible
 
-         max_inner_iter = 70     # potrebbe dipendere dal numero di stanze (tipo = numero di permutazioni)
+         max_inner_iter = 70     
          iter_inner = 1
          f_best = f_best_sofar
          x_best = x_feasible
          flag_improve = False
+         
          while iter_inner < max_inner_iter:
             iter_inner = iter_inner + 1
             for t in range(0,D):
                for s in range(0,3):
                   np.random.shuffle(nurseXroom[:, t, s])
                   x = copy.deepcopy([Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom])
-                  #x = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
                   value_try = evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights)
                   if value_try < f_best - 1:
                      f_best = value_try
                      x_best = copy.deepcopy([Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom])
-                     #x_best = [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom]
                      flag_improve = True
          if flag_improve == True:
             return x_best, True, f_best
@@ -275,7 +260,6 @@ def check_constraint(x, occupants, patients, rooms, nurses, surgeons, D, operati
 
    # Constraint H3, H4
    bool_3_4_constraint = OT_and_Surgeon_constr_bool(surgeons, patients, operating_theaters, Adm_Date, otXpatient, D)
-   # prima era MaxTime_constr_bool
    
    # Constraint H5, H6
    bool_6_constraint = bool_period_of_admission_constr(Adm_yes_or_no, Adm_Date, patients)
@@ -283,8 +267,6 @@ def check_constraint(x, occupants, patients, rooms, nurses, surgeons, D, operati
 
    # Constraint H2  
    bool_2_constraint = bool_incompatible_room_constr(patients, roomXpatient)
-
-   # Scheduling of nurse are already respect because of the perturbation
 
    constraint_vector = [
    int(bool_1_7_constraint),   
@@ -299,7 +281,11 @@ def check_constraint(x, occupants, patients, rooms, nurses, surgeons, D, operati
 def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weights, printing = False):
    Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, nurseXroom = x
    total_cost = 0
-   # useful structure that will be exploited 
+   
+   # "list_day_patientAndoccupant" is a useful structure that will be exploited:
+   # a list for each day (0 to D-1) containing the indices of all patients and occupants 
+   # present in the hospital on that day. 
+   
    list_day_patientAndoccupant = [[] for _ in range(D)]
    occupant_start_index = len(patients) 
 
@@ -316,17 +302,15 @@ def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weight
          list_day_patientAndoccupant[t].append(occupant_start_index+o)
    
    
-   # S1) quantity derives from age difference in each room
+   # S1) Cost deriving from soft constraint: Room age
    qnt1 = 0
    for t, list_people in enumerate(list_day_patientAndoccupant):
-      # Create a data structure for each room list of patient (list of list) in room that day
       list_of_set_age = [set() for _ in range(len(rooms))]
-      # fill the structure
       for i in list_people:
-         if i < len(patients) and Adm_yes_or_no[i] == 1:   # i is an admitted patient
+         if i < len(patients) and Adm_yes_or_no[i] == 1:  
             room_id = roomXpatient[i]
             list_of_set_age[room_id].add(patients[i].age_group)
-         elif i >= len(patients):     # i is an occupant
+         elif i >= len(patients):     
             room_id = occupants[i-len(patients)].room_id 
             list_of_set_age[room_id].add(occupants[i-len(patients)].age_group)
       for set_age in list_of_set_age: 
@@ -334,8 +318,8 @@ def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weight
             qnt1 = qnt1 + (max(set_age)-min(set_age))
    qnt1 = qnt1 * weights['room_mixed_age']
 
-   # S2) The minimum skill level a nurse must have to provide the required care for a patient during each shift of their stay should be met
-   # S3) Continuity of care
+   # S2) Cost deriving from soft constraint: skill level required
+   # S3) Cost deriving from soft constraint: Continuity of care
    qnt2 = 0
    qnt3 = 0
    for p, patient in enumerate(patients):   
@@ -343,7 +327,7 @@ def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weight
       roomXPat = roomXpatient[p]
       skill_level_req_list = patient.skill_level_required
       if Adm_yes_or_no[p] == 1:
-         for t in range(Adm_Date[p], min(Adm_Date[p]+patient.length_of_stay, D)): # abbiamo tolto -1
+         for t in range(Adm_Date[p], min(Adm_Date[p]+patient.length_of_stay, D)):
             t_0 = t-Adm_Date[p]
             skill_level_req1 = skill_level_req_list[3*(t_0)]
             skill_level_req2 = skill_level_req_list[3*(t_0)+1]
@@ -380,10 +364,11 @@ def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weight
    qnt2 = qnt2 * weights['room_nurse_skill']
    qnt3 = qnt3 * weights['continuity_of_care']
 
-   # S4) maximum workload for nurse
+   # S4) Cost deriving from soft constraint: maximum workload for nurse
    qnt4 = 0
    
-   # Support data structure: matrix with dimension D x num_rooms x 3 in order to store workload total required in that room in that specific period:
+   # Support data structure: 
+   # matrix with dimension D x num_rooms x 3 in order to store workload total required in that room in that specific period
    matrix = np.zeros((D, len(rooms), 3))
  
    for o, occupant in enumerate(occupants): # fill the data structure with info of occupants
@@ -399,16 +384,17 @@ def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weight
             t_0 = t-Adm_Date[p]
             matrix[t,roomXpatient[p],s] = matrix[t,roomXpatient[p],s] + patient.workload_produced[3*t_0 + s]
    
-   for n, nurse in enumerate(nurses):   # calculate for each nurse the delta of workload
+   # Calculate for each nurse the delta of workload
+   for n, nurse in enumerate(nurses):   
       for i, diz in enumerate(nurse.working_shifts):   
          day = diz['day']
          shift = string_conversion(diz['shift'])
          max_work = diz['max_load']
          list_idRoom = np.where(nurseXroom[:,day,shift] == n)[0]
-         qnt4 = qnt4 + max(0, sum(matrix[day,list_idRoom,shift]) - max_work) # potrebbe essere un problema
+         qnt4 = qnt4 + max(0, sum(matrix[day,list_idRoom,shift]) - max_work) 
    qnt4 = qnt4 * weights['nurse_eccessive_workload']
 
-   # S5) number of OT with at least one patient (open) lead to a cost 
+   # S5) Cost deriving from soft constraint: number of OT with at least one patient (open) lead to a cost 
    qnt5 = 0
    for t in range(0,D):
       open_OT = set()
@@ -419,18 +405,18 @@ def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weight
       qnt5 = qnt5 + num_open_OT
    qnt5 = qnt5 * weights['open_operating_theater']
 
-   # S6) The number of different OTs a surgeon is assigned to per working day should be minimized
+   # S6) Cost deriving from soft constraint: surgeon transfer
    qnt6 = 0
    for t in range(0,D):
       list_surgeonXrooms_in_t = [set() for _ in range(len(surgeons))]
       for p,patient in enumerate(patients):
-         if Adm_Date[p] == t:   # when occurs the surgery
-            list_surgeonXrooms_in_t[patient.surgeon_id].add(roomXpatient[p])  # obiettivo: più stanze diverse più pago
+         if Adm_Date[p] == t:   
+            list_surgeonXrooms_in_t[patient.surgeon_id].add(otXpatient[p]) 
       qnt6 = qnt6 + sum(max(0,len(s)-1) for s in list_surgeonXrooms_in_t)
 
    qnt6 = qnt6 * weights['surgeon_transfer']
 
-   # S7) Admission delay: The number of days between a patient’s release date and their actual date of admission should be minimized
+   # S7) Cost deriving from soft constraint: admission delay
    qnt7 = 0
    for p,patient in enumerate(patients):
       if Adm_yes_or_no[p] == 0:
@@ -438,7 +424,7 @@ def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weight
       qnt7 = qnt7 + (Adm_Date[p] - patient.surgery_release_day)
    qnt7 = qnt7 * weights['patient_delay']
 
-   # S8) The number of optional patients who are not admitted in the current scheduling period should be minimized
+   # S8) Cost deriving from soft constraint: unschedule non mandatory patients
    qnt8 = 0
    qnt8 = np.sum(Adm_yes_or_no == 0) * weights['unscheduled_optional']
 
@@ -449,44 +435,36 @@ def evaluate_obj_func(x, occupants, patients, rooms, nurses, surgeons, D, weight
 
    return  total_cost    
 
-# CONSTRUCTIVE FUNCTIONS FOR CONSTRAINTS
+## Constructive function:
 
 def admit_constr(Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, patients, D, surgeons, operating_theaters, num_rooms, dont_admit_nonMand):
 
-   rate = (num_rooms*0.5 + len(operating_theaters)*0.5)/len(patients)    # peso di più le stanze perchè le ot sono visitate da pazienti solo in un giorno 
-   #prob = 1 / (1 + math.exp(-rate))    # Probability to accept the non mandatory
-   # prob = random.uniform(0,1)
-   prob = 1
-   # We impose to admit all mandatory patients
+   ## Decision if admit or not a patient
+   prob = 1 # Probability with which we decide if admitting or not the non mandatory patient
    for p, patient in enumerate(patients):
-      if patient.mandatory:
+      if patient.mandatory:   # admit all mandatory patient
          Adm_yes_or_no[p] = 1
-      # CHANGE Adm_yes_or_no[p] = random.uniform(0, 1)  Non mi sembra giusto: distribuzione uniforme non è categorica
-      # Idea: più aumenta il "rate" (più ci sono stanze rispetto al numero di pazienti) più aumento la prob di accettare un non mandatory
-      # parte seguente NECESSARIA: ALTRIMENTI ULTIMO VINCOLO SU ROOMS VENIVA SEMPRE NON FEASIBLE perchè ammettevo troppo 
       else:
-         if dont_admit_nonMand == True:   # don't admit non mandatory
+         if dont_admit_nonMand == True:   # don't admit non mandatory because otherwise a feasible solution was not found
             Adm_yes_or_no[p] = 0
             Adm_Date[p] = - 1
             roomXpatient[p] = -1
             otXpatient[p] = -1
-         else:    # admission of non mandatory depends on how many rooms and OT are there in the hospital problem
-            Adm_yes_or_no[p] = random.choices([0, 1], weights=[1 - prob, prob])[0]
+         else:    
+            Adm_yes_or_no[p] = random.choices([0, 1], weights=[1 - prob, prob])[0]  
             if Adm_yes_or_no[p] == 0:
                Adm_yes_or_no[p] = 0
                Adm_Date[p] = - 1
                roomXpatient[p] = -1
                otXpatient[p] = -1
-
-
-
+               
+   
+   # Useful structure for keeping track of remaining OT's and surgeon's availability
    surgeons_availability = []
    for s, surgeon in enumerate(surgeons):
       surgeons_availability.append(surgeon.list_max_surgery_time)
-   
-   list_timeXsurgeon = [[0] * D for _ in range(len(surgeons))]   # matrix len(surgeons) X D with total time for each surgeon in each day
-   list_timeXOT = [[0] * D for _ in range(len(operating_theaters))]  # matrix len(operating_theaters) X D
-   
+   list_timeXsurgeon = [[0] * D for _ in range(len(surgeons))]   
+   list_timeXOT = [[0] * D for _ in range(len(operating_theaters))]  
 
    list_mandatory_p = []
    list_non_mandatory_p = []
@@ -496,96 +474,85 @@ def admit_constr(Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, patients, D,
       else:
          list_non_mandatory_p.append(p)
 
-   # CHANGE: ho visto che è più facile rispettare i vincoli se prima soddisfiamo quelli per i mandatory (che sicuramente dobbiamo accettare), mentre i 
-   # non mandatory possiamo anche rifiutarli. Quindi IDEA, ditemi se vi sembra sensata, prima inserisco i mandatory, poi cerco di inserire i non mandatory e mal che vada
-   # li rifiuto (quindi non vado in ordine di id di paziente ma prima prendo tutti i mandatory poi tutti i non mandatory)
-   # -> se facciamo così anche adm_yes_or_no viene costruita
-   # -> oss per aggiungere variabilità se vediamo che la funzione ritorna sempre false possiamo anche scegliere casualmente l'ordine con cui inserisco i pazienti nelle OT/chirurgi. 
-   # es: scelgo casualmente l'indice di inizio del for 
-
    # Adding randomness
    random.shuffle(list_mandatory_p)
    random.shuffle(list_non_mandatory_p)
 
+   ## Process each mandatory patient giving each of them and admission date and an OT which is feasible
+   # Iterate over all mandatory patients
    for p in list_mandatory_p:
       patient = patients[p]
-      # Inizialization:
-      flag_find_configuration = False # it's true when we find a feasible situation for the patient (adm date and OT which respect the constraint)
-      id_surgeonXp = patient.surgeon_id 
+      flag_find_configuration = False  # Set to True when a feasible scheduling is found for the patient
+      id_surgeonXp = patient.surgeon_id
+
+      # Get the availability of the surgeon and extract available days
       tot_day_availability = surgeons_availability[id_surgeonXp]
       day_available = np.nonzero(tot_day_availability)[0]
       day_available_set = set(day_available)
-      # we take the intersection between day availability of the surgeon and interval time between surgery_release and surgery_due_day
-      # Mettere un controllo eventualmente se a lista seguente è vuota
+
+      # Randomly select an admission date within the patient’s release-due window and surgeon's availability
       Adm_Date[p] = random.choice(list(day_available_set.intersection(range(patient.surgery_release_day, patient.surgery_due_day + 1))))
-      # CHANGE: condizione di blocco del ciclo
-      # questa condizione porta il ciclo a fermarsi quando almeno una di queste due variabili diventa True ma noi vogliamo che si fermi quando entrambe lo sono
+
+      # Try to find a feasible operating theater (OT) and surgeon configuration for the selected admission day
       while not flag_find_configuration:
          available_OT = operating_theaters[otXpatient[p]].availability[Adm_Date[p]]
          already_used_OT = list_timeXOT[otXpatient[p]][Adm_Date[p]]
          requested_OT = patient.surgery_duration
-         if (available_OT - already_used_OT) > requested_OT:  # patient is in a feasible OT
-            # CHANGE: quando si entra qui non si modifica mai più il flag_day perchè è nell'altro else, quindi ho aggiunto controllo su chirurghi:
-            # Ho aggiunto questa parte sotto (copiata praticamente da quello che c'è sotto)
-            # DA QUI
-            available_surg = surgeons_availability[id_surgeonXp][Adm_Date[p]]
-            already_used_surg = list_timeXsurgeon[id_surgeonXp][Adm_Date[p]]
-            requested_surg = patient.surgery_duration
-            if (available_surg - already_used_surg) > requested_surg:
-               # update the local variables
-               list_timeXOT[otXpatient[p]][Adm_Date[p]] += patient.surgery_duration   # the OT in which the patient is assigned has enough capacity
-               list_timeXsurgeon[id_surgeonXp][Adm_Date[p]] += patient.surgery_duration
-               flag_find_configuration = True
-            else:   # change day of admission and restart the loop while
-               # CHANGE: tolgo il giorno di ammissione che non soddisfa i vincoli (altrimenti rishio loop infinito)
-               day_available_set.discard(Adm_Date[p])  # avoid to pick another time the admission date that lead to a configuration not feasible
-               possible_day = list(day_available_set.intersection(range(patient.surgery_release_day, patient.surgery_due_day + 1)))
-               if not possible_day: # not feasible admission day
-                  return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, flag_find_configuration]
-               Adm_Date[p] = random.choice(possible_day)  
-            # A QUI
-         else:   # change OT for the patient 
-               # CHANGE: non penso di aver capito perchè si usa la OT_availability che non tiene in considerazione dei pazienti già assegnati e invece
-               # usare direttamente list_timeXOT. Es: una OT può avere availability alta ma se è già tutta occupata ne ha 0. 
-               # Nell'ultimo blocco if (if + elif) mi sembra manchi 
-               # di considerare il fatto che se sono nella situazione in cui flag_OT = true ma il chirurgo non ha disponibilità, non entro nè nell'if nè
-               # nell'elif quindi quel flag_day non vedo dove si possa aggiornare. Questo si può aggiornare nel caso in cui cambio Adm_Date[p]
-               # ovvero solo se entro nell'elif  (se non si aggiorna problema perchè in caso brutti potrei avere ciclo infinito, per ora non
-               # l'abbiamo mai avuto perchè la condizione sul while era sbagliata). Ultimissima cosa, quando siamo sfortunati e non si soddisfa 
-               # il constraint sul chirurgo andiamo a scegliere un'altra admission date (con random.choice), il problema secondo me è che se non 
-               # togliamo la data di ammissione appena verificata essere non idonea rischio di entrare in un loop infinito. Es: in day_available ho tutti 
-               # giorni che non vanno bene -> ciclo all'infinito perchè continuerò a pescare giorni non idonei. Soluzione: ogni volta tolgo il giorno
-               # non idoneo e se arrivo a non avere più giorni disponibili la funzione complessiva ritorna un booleano e il processo riparte da capo (da create_random_point) sperando di
-               # aver messo abbastanza variabilità in modo che difficilmente ricapiti. Quindi ho aggiunto una cosa con il metodo .discard che elimina elementi nei set.
-               # In caso di non abbastanza variabilità possiamo aggiungere variabilità nell'ordine con cui assegniamo la adm date e le ot (per ora è in ordine deterministico di id)
-               # Prima di aggiornare list_timeXOT devo aver assegnato sia l'admission date, sia la ot al paziente. Quindi questo lo faccio solo una volta che ho trovato una
-               # configurazione feasible. Es: se assegno un ot al paziente e aggiorno list_timeXOT, poi controllo il chirurgo e non rispetto i vincoli dovrò cambiare il giorno di ammissione
-               # e considerare una nuova configurazione
-               # ALTERNATIVA:
-               list_available_Xp = [      i for i in range(len(list_timeXOT))
-                  if (operating_theaters[i].availability[Adm_Date[p]] - (list_timeXOT[i][Adm_Date[p]] + patient.surgery_duration)) > 0     ]   # list of feasible OT for the patient p in the day of admission
-               if not list_available_Xp:  # not an OT available, so we need to change day of admission 
-                  day_available_set.discard(Adm_Date[p])  # avoid to pick another time the admission date that lead to a configuration not feasible
+
+         # Check if the selected OT has enough free time
+         if (available_OT - already_used_OT) > requested_OT:
+               available_surg = surgeons_availability[id_surgeonXp][Adm_Date[p]]
+               already_used_surg = list_timeXsurgeon[id_surgeonXp][Adm_Date[p]]
+               requested_surg = patient.surgery_duration
+
+               # Check if the surgeon has enough available time on that day
+               if (available_surg - already_used_surg) > requested_surg:
+                  # Reserve time slots for both OT and surgeon
+                  list_timeXOT[otXpatient[p]][Adm_Date[p]] += patient.surgery_duration
+                  list_timeXsurgeon[id_surgeonXp][Adm_Date[p]] += patient.surgery_duration
+                  flag_find_configuration = True  # Feasible scheduling found
+               else:
+                  # Remove this day from possible choices and retry with another day
+                  day_available_set.discard(Adm_Date[p])
                   possible_day = list(day_available_set.intersection(range(patient.surgery_release_day, patient.surgery_due_day + 1)))
-                  if not possible_day: # not feasible admission day for the patient
+                  if not possible_day:
                      return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, flag_find_configuration]
                   Adm_Date[p] = random.choice(possible_day)
-               else:    # there is at least one OT available for the patient
+
+         else:
+               # No available time in the initially assigned OT, search for alternative feasible OTs
+               list_available_Xp = [
+                  i for i in range(len(list_timeXOT))
+                  if (operating_theaters[i].availability[Adm_Date[p]] - (list_timeXOT[i][Adm_Date[p]] + patient.surgery_duration)) > 0
+               ]
+
+               # If no OTs available, change admission day
+               if not list_available_Xp:
+                  day_available_set.discard(Adm_Date[p])
+                  possible_day = list(day_available_set.intersection(range(patient.surgery_release_day, patient.surgery_due_day + 1)))
+                  if not possible_day:
+                     return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, flag_find_configuration]
+                  Adm_Date[p] = random.choice(possible_day)
+               else:
+                  # At least one OT is feasible, randomly assign one and check surgeon constraint
                   otXpatient[p] = np.random.choice(list_available_Xp)
-                  # Check constraint regarding surgeon
                   available_surg = surgeons_availability[id_surgeonXp][Adm_Date[p]]
                   already_used_surg = list_timeXsurgeon[id_surgeonXp][Adm_Date[p]]
                   requested_surg = patient.surgery_duration
+
                   if (available_surg - already_used_surg) > requested_surg:
+                     # Reserve slots and mark configuration as feasible
                      list_timeXOT[otXpatient[p]][Adm_Date[p]] += patient.surgery_duration
                      list_timeXsurgeon[id_surgeonXp][Adm_Date[p]] += patient.surgery_duration
                      flag_find_configuration = True
-                  else: # the surgeon can't work so much, change day of admission  
-                     day_available_set.discard(Adm_Date[p])  # avoid to pick another time the admission date that lead to a configuration not feasible
+                  else:
+                     # Surgeon not available enough; retry with another day
+                     day_available_set.discard(Adm_Date[p])
                      possible_day = list(day_available_set.intersection(range(patient.surgery_release_day, patient.surgery_due_day + 1)))
-                     if not possible_day: # not feasible admission day
-                        return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, flag_find_configuration]
-                     Adm_Date[p] = random.choice(possible_day) 
+                     if not possible_day:
+                           return [Adm_yes_or_no, Adm_Date, roomXpatient, otXpatient, flag_find_configuration]
+                     Adm_Date[p] = random.choice(possible_day)
+   # DA QUA A COMMENTARE
    for p in list_non_mandatory_p:
       if Adm_yes_or_no[p] == 0:
          continue

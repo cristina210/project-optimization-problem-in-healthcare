@@ -2,6 +2,7 @@ import json
 import os
 import matplotlib.pyplot as plt
 
+
 def change_shift(number):
     if number == 0:
         return "early"
@@ -34,30 +35,44 @@ def L(id_n, matrix, rooms):
                 "rooms": []
             }
         dictionary[key]["rooms"].append(rooms[room].id_orig)
-
     return list(dictionary.values())
 
 def patient_output(Adm_Date, roomXpatient, operating_theaters, patients, rooms):
     """Genera una lista di pazienti con le relative informazioni."""
-    patient_list = [] 
+    
+    room_id_origin = rooms[1].id_orig # qui ho preso la seconda stanza, puo essere r01 o r1
+    flag = False # la setto false quando non c è lo zero
+    if int(room_id_origin[1]) == 0:
+        flag = True # in jason 7 dovrebbe essere vera
+
+    patient_list = []
+
     for p in range(len(Adm_Date)):
         id_p = str(patients[p].id_orig)
         if Adm_Date[p] == -1:
             dictionary = {
-            "id": id_p, 
-            "admission_day": "none",  # Mantieni un numero qui se richiesto
+                "id": id_p,
+                "admission_day": "none"
             }
         else:
+            if flag:
+                if int(roomXpatient[p]) < 10:
+                    room_str = "r0" + str(roomXpatient[p])
+                else:
+                     room_str = "r" + str(roomXpatient[p])
+            else:
+                room_str = "r" + str(roomXpatient[p])
             dictionary = {
                 "id": id_p,
                 "admission_day": int(Adm_Date[p]),
-                "room": "r0" + str(roomXpatient[p]) if int(roomXpatient[p]) < 10 else "r" + str(roomXpatient[p]),
-                # for file i04
-                #"room": "r" + str(roomXpatient[p]), 
+                "room": room_str,
                 "operating_theater": "t" + str(operating_theaters[p])
             }
-        patient_list.append(dictionary)  
+
+        patient_list.append(dictionary)
+
     return patient_list
+
 
 def nurse_output(nurses, nurseXroom, rooms):
     result = []
@@ -97,3 +112,4 @@ def plot_f_obj(f_history):
    plt.title('Objective function')
    plt.grid(True)
    plt.show()
+   return 0
