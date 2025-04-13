@@ -8,14 +8,16 @@ from results.output import plot_f_obj
 
 if __name__ == "__main__":
     
-   ## ✅loading datasets 
-   json_file = "data/i03.json"
+   ## ▶ Loading datasets 
+   json_file = "data/i04.json"
    occupants, patients, operating_theaters, rooms, nurses, surgeons, hospital = load_data_1(json_file)  
    D, num_skill_level, shift_types, age_groups, weights = load_data_2(json_file) 
-   ## finding solution with GRASP method
-   max_iter = 2
+   
+   ## ▶ Finding solution with GRASP method
+   max_iter = 20
    f_best, solution, time_create_random, time_local_search, f_history = grasp_solver(D, weights, occupants, patients, operating_theaters, rooms, nurses, surgeons, max_iter)
-   ## ✅Output
+   
+   ## ▶ Output
    print("Final result:")
    print(f_best)
    print("Time for creating the initial random feasible points:")
@@ -26,7 +28,7 @@ if __name__ == "__main__":
    evaluate_obj_func(solution, occupants, patients, rooms, nurses, surgeons, D, weights, True)
    plot_f_obj(f_history)
    
-## ✅Create jason for output
+## ▶ Create json file for output
 generate_json(solution, patients, nurses, rooms, operating_theaters)
 
 

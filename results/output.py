@@ -2,6 +2,7 @@ import json
 import os
 import matplotlib.pyplot as plt
 
+# Functions for write the json file with the solution found and the plot of objective function
 
 def change_shift(number):
     if number == 0:
@@ -24,7 +25,6 @@ def L(id_n, matrix, rooms):
                     s.append(shift)
                     r.append(id_room)
 
-    # Eliminare ripetizioni (day, shift) e raggruppare le room
     dictionary = {}
     for day, shift, room in zip(d, s, r):
         key = (day, shift)
@@ -40,10 +40,10 @@ def L(id_n, matrix, rooms):
 def patient_output(Adm_Date, roomXpatient, operating_theaters, patients, rooms):
     """Genera una lista di pazienti con le relative informazioni."""
     
-    room_id_origin = rooms[1].id_orig # qui ho preso la seconda stanza, puo essere r01 o r1
-    flag = False # la setto false quando non c è lo zero
+    room_id_origin = rooms[1].id_orig 
+    flag = False 
     if int(room_id_origin[1]) == 0:
-        flag = True # in jason 7 dovrebbe essere vera
+        flag = True
 
     patient_list = []
 
@@ -73,7 +73,6 @@ def patient_output(Adm_Date, roomXpatient, operating_theaters, patients, rooms):
 
     return patient_list
 
-
 def nurse_output(nurses, nurseXroom, rooms):
     result = []
     for n in range(len(nurses)): 
@@ -100,16 +99,24 @@ def generate_json(solution, patients, nurses, rooms, operating_theaters):
     print("File 'hospital_schedule.json' creato con successo!")
 
 def plot_f_obj(f_history):
-    # Plot
-   x = list(range(len(f_history)))              
-   y = [row[0] for row in f_history]             
-   colori = ['orange' if row[1] == 1 else 'blue' for row in f_history]
-   plt.figure(figsize=(10, 5))
-   plt.plot(x, y, color='black', linewidth=1, linestyle='-') 
-   plt.scatter(x, y, c=colori, s=60, edgecolors='k')           
-   plt.xlabel('Iter')
-   plt.ylabel('Value of objective function')
-   plt.title('Objective function')
-   plt.grid(True)
-   plt.show()
-   return 0
+    x = list(range(len(f_history)))
+    y = [row[0] for row in f_history]
+    colori = ['orange' if row[1] == 1 else 'skyblue' for row in f_history]
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(x, y, color='black', linewidth=3.5, linestyle='-')  # linee più spesse
+    plt.scatter(x, y, c=colori, s=160, edgecolors='k')           # punti più grandi
+
+    # Etichette e titolo con font più grande
+    plt.xlabel('Iter', fontsize=19)
+    plt.ylabel('Value of objective function', fontsize=16)
+    plt.title('Objective function', fontsize=18)
+
+    plt.xticks(fontsize=17)
+    plt.yticks(fontsize=17)
+    plt.grid(True)
+    plt.tight_layout()
+
+    #plt.savefig("objective_function_plot.png", dpi=300)  # opzionale per salvarla
+    plt.show()
+    return 0

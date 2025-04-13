@@ -4,7 +4,7 @@ import time
 import copy
 
 def grasp_solver(D, weights, occupants, patients, operating_theaters, rooms, nurses, surgeons, max_iter):
-   ## ✅Initialization
+   ## ▶ Initialization
    time_create_random = []
    time_local_search = []
    f_history = []
@@ -14,7 +14,7 @@ def grasp_solver(D, weights, occupants, patients, operating_theaters, rooms, nur
    while iter < max_iter and flag_point_found2:
       print("ITERATION:")
       print(iter)
-      ## ✅Construct feasible solution:
+      ## ▶ Construct feasible solution:
       x_feasible, flag_point_found1 = construct_feasible_solution(occupants, patients, operating_theaters, rooms, nurses, surgeons, D)
       if flag_point_found1 == False:  # a feasible solution is not found
          print("Firstly, non mandatory patients are not admitted")   # not admitting non mandatory patients
@@ -34,11 +34,11 @@ def grasp_solver(D, weights, occupants, patients, operating_theaters, rooms, nur
          x_best_sofar = copy.deepcopy(x_feasible)
          f_best_sofar =  value_feas_sol
       improvements_yes_or_no = True    
-      ## ✅Explore the neighborhood:
-      print("Exploring the neighborhood:")
+      ## ▶ Explore the neighborhood:
+      print("Exploring the neighborhood")
       while improvements_yes_or_no :
          start_time_loc_search = time.time()
-         x_best_neighbour, improvements_yes_or_no, f_new = LocalSearch(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, surgeons, D, operating_theaters, weights) 
+         x_best_neighbour, improvements_yes_or_no, f_new = local_search(x_feasible, f_best_sofar, patients, occupants, rooms, nurses, surgeons, D, operating_theaters, weights) 
          end_time_loc_search = time.time()
          time_local_search.append(end_time_loc_search-start_time_loc_search)
          if improvements_yes_or_no:
