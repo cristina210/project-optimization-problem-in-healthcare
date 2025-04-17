@@ -1,15 +1,15 @@
 # Stochastic-opt-assignement
 
 ## Purpose
-Quello che ha scritto leti
-
-1)  è il problema da risolvere (3 problemi di scheduling in ospedale)
-
-2) Qual è l'approccio (GRASP su istanze ospedaliere).
-
-3) Qual è l'obiettivo (minimizzare costi).
+Integrated healthcare scheduling focuses on coordinating resources across multiple services within a single healthcare system.
+The optimization problem under consideration addresses three key challenges in healthcare: surgical case planning, scheduling of patient admissions, and assigning nurses to rooms.
+The purpose of the code is to enhance and optimize patient flow throughout the hospital’s various departments and facilities. 
+We solve the problem by using the implemented  Greedy Randomized Adaptive Search Procedure (GRASP). The goal of this search method is returning a solution which should be both feasible and it should minimize the objective function. It repeatedly applies local search from different starting feasible solution.
+The objective function is defined as the weighted sum of all soft constraint violations. Each soft constraint corresponds to a desired but non-mandatory condition in the hospital setting. When these constraints are not fully satisfied, a penalty cost is incurred. The objective is to minimize the total cost, thus achieving a solution that best respects these preferences while maintaining feasibility.
+It is important to note that the GRASP solver relies on local search techniques, which means there is no guarantee that the solution found is a global minimum.
 
 ## Project Structure
+<pre> ```
 ├── data/                        # Example of data for the scheduling problem
 ├── Instances/                   # Definition of hospital-related entities
 │   ├── hospital.py              # Hospital class definition
@@ -37,6 +37,7 @@ Quello che ha scritto leti
 ├── main.py                      # Main script to run the project
 ├── README.md                    # Project description
 └── requirements.txt             # List of Python dependencies
+``` </pre>
 
 ## How to Run
 Clone the repository:

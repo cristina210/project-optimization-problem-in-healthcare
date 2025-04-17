@@ -104,10 +104,9 @@ def plot_f_obj(f_history):
     colori = ['orange' if row[1] == 1 else 'skyblue' for row in f_history]
 
     plt.figure(figsize=(10, 5))
-    plt.plot(x, y, color='black', linewidth=3.5, linestyle='-')  # linee più spesse
-    plt.scatter(x, y, c=colori, s=160, edgecolors='k')           # punti più grandi
+    plt.plot(x, y, color='black', linewidth=3.5, linestyle='-')  
+    plt.scatter(x, y, c=colori, s=160, edgecolors='k')           
 
-    # Etichette e titolo con font più grande
     plt.xlabel('Iter', fontsize=19)
     plt.ylabel('Value of objective function', fontsize=16)
     plt.title('Objective function', fontsize=18)
@@ -116,7 +115,5 @@ def plot_f_obj(f_history):
     plt.yticks(fontsize=17)
     plt.grid(True)
     plt.tight_layout()
-
-    #plt.savefig("objective_function_plot.png", dpi=300)  # opzionale per salvarla
     plt.show()
     return 0
