@@ -41,8 +41,8 @@ It is important to note that the GRASP solver relies on local search techniques,
 
 ## How to Run
 
-Clone the repository:
 ```bash
+Clone the repository:
 git clone https://github.com/cristina210/Stochastic-opt-assignement.git
 
 Install the dependencies:
