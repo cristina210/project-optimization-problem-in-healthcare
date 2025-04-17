@@ -40,15 +40,13 @@ It is important to note that the GRASP solver relies on local search techniques,
 ``` </pre>
 
 ## How to Run
+
 Clone the repository:
-    ```bash
-    git clone https://github.com/cristina210/Stochastic-opt-assignement.git
-    ```
+```bash
+git clone https://github.com/cristina210/Stochastic-opt-assignement.git
+
 Install the dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
+pip install -r requirements.txt
+
 Run the application:
-    ```bash
-    python main.py
-    ```
+python main.py
