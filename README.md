@@ -19,21 +19,21 @@ It is important to note that the GRASP solver relies on local search techniques,
 │   ├── patient.py               # Patient class definition
 │   ├── room.py                  # Room class definition
 │   ├── surgeon.py               # Surgeon class definition
-│   └── utils_instances.py       # Utility functions for managing instances'id and attribute
+│   └── utils_instances.py       # Utility functions for managing instances
 │
 ├── results/                     # Output results and validator
-│   ├── *.json                   # Sample Output files
+│   ├── *.json                  
 │   ├── output.py                # Script for processing and displaying outputs
 │   ├── IHTP_Validator.cc        # C++ source code for solution validator
 │   └── IHTP_Validator.exe       # Compiled validator executable
 │
-├── settings/                    # Project settings or configuration files (if used)
+├── settings/                    
 │
 ├── solvers/                     # Solving algorithms for the scheduling problem
 │   ├── grasp_solver.py          # GRASP algorithm implementation
 │   └── utils_grasp.py           # Helper functions used by the solver GRASP
 │
-├── loader_data.py               # Script to load and prepare data
+├── loader_data.py               # Script to load data
 ├── main.py                      # Main script to run the project
 ├── README.md                    # Project description
 └── requirements.txt             # List of Python dependencies
